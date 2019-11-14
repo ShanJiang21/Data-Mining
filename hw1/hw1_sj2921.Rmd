@@ -1,0 +1,505 @@
+---
+title: "Data Mining Homework 1"
+author: "Shan Jiang"
+date: "09/27/2019"
+output: 
+   pdf_document: 
+     highlight: pygments
+     toc: yes
+     toc_depth: 5
+---
+
+## Data Preparation 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tidyverse) 
+library(leaps)
+library(lattice)
+library(caret)
+library(glmnet)
+library(pls)
+require(ggplot2)
+```
+
+**Prostate data**:
+
+*Predictors* (columns 1--8)
+
+* lcavol
+* lweight
+* age
+* lbph
+* svi
+* lcp
+* gleason
+* pgg45
+
+*outcome* (column 9): lpsa
+
+*train/test indicator* (column 10)
+
+This last column indicates which 67 observations were used as the 
+`training set` and which 30 as the test set, as described on page 48
+in the book.
+
+The features must first be scaled to have mean zero and variance 96 (=n)
+before the analyses in Tables 3.1 and beyond.  
+
+That is, if x is the 96 by 8 matrix of features, we compute xp <- scale(x,TRUE,TRUE)
+
+### Import data and Cleaning
+
+```{r echo=FALSE}
+df <- read.delim("./prostate.data")
+modeldf0 = df[2:11] ## Include indicators
+modeldf = df[2:10]
+
+## Overview of the data covariates in model
+p = dim(modeldf)[2]-1  
+# the last column is response 
+p
+# Obs in data 
+totalSamples = dim(modeldf)[1] 
+totalSamples 
+```
+
+```{r}
+## sampling segments 
+library(bestglm)
+k = 5 
+set.seed(1818) 
+folds = sample(1:k, nrow(df), replace = TRUE)
+
+## Set up the train and test data 
+testdata = modeldf0 %>% 
+  filter(train == FALSE) %>% 
+  select(-train)
+
+traindata = modeldf0 %>% 
+  filter(train == TRUE) %>% 
+  select(-train)
+```
+
+```{r}
+# standardization of predictors
+prostate = df %>% 
+  dplyr::select(-X)
+
+trainst <- traindata
+
+for(i in 1:8) {
+  trainst[,i] <- trainst[,i] - mean(prostate[,i]);
+  trainst[,i] <- trainst[,i]/sd(prostate[,i]);
+}
+
+testst <- testdata
+for(i in 1:8) {
+  testst[,i] <- testst[,i] - mean(prostate[,i]);
+  testst[,i] <- testst[,i]/sd(prostate[,i]);
+}
+
+```
+
+
+### Data Analysis 
+
+For the Analysis below, all the data have been standardized already.
+
+### (a) Best-subset linear regression with k chosen by 5-fold cross-validation.
+
+
+```{r}
+set.seed(21)
+## Fit model: with k = 5 
+res.bestcv = bestglm(trainst, 
+                     IC= "CV", 
+                     CVArgs = list(Method="HTF", K=5, REP=1))
+
+## Extract the cv.error and sd. for cv.error
+res.bestcv$Subsets$CV
+res.bestcv$Subsets$sdCV
+
+```
+
+##### Correlation Coefficients 
+
+```{r}
+## Show top model
+res.bestcv
+coef(res.bestcv$BestModel)
+```
+
+
+##### graph of the CV error 
+
+```{r}
+v = c(0:8)
+error1 = res.bestcv$Subsets$CV
+sd1 = res.bestcv$Subsets$sdCV
+fit1 = data.frame(cbind(v, error1, sd1))
+ggplot(fit1, aes(x = c(0:8), 
+                 y = error1
+                        )) + 
+  geom_line(aes(col = '#E69F00')) +
+  geom_point(aes(col = '#999999'))+
+  geom_errorbar(aes(ymin = error1 - sd1, 
+                    ymax = error1 + sd1), 
+                 width = 0.2,
+                 position = position_dodge(0.05)) +
+   labs(title="Best Subset Method with 5-fold CV", 
+      x="# of Variables", y = "CV Error")+
+   theme_classic() +
+   theme(legend.position="none") +
+    geom_hline(yintercept= min(error1), 
+               linetype="dashed", color = "purple") +
+    geom_vline(xintercept= 2, 
+               linetype="dashed", color = "purple")
+   
+```
+
+
+##### Fitting the trained model on the test data: Test Error
+
+```{r}
+## Yhat: predicted value on the testdata 
+yh <- as.matrix(predict
+                (res.bestcv$BestModel,newx = as.matrix(testst[,1:8]) ))
+
+### test error 
+te1 = sum(lm(lpsa~lcavol + lweight, testst)$residuals^2)/30
+te1
+
+## estimating Std Error
+sd1 = sum(sqrt(mean(((yh[1:30] - testst[,9])^2))))/nrow(testst)
+sd1
+```
+
+We see that cross-validation selects an 1-variable model, with CV error experienced a large plunge from No variable was fitted to just 1 variable fit in the model.
+
+
+
+### (b) Best-subset linear regression with k chosen by BIC.
+
+```{r}
+set.seed(1)
+reg.bestbic = bestglm(trainst, 
+                     IC="BIC")
+
+## Model summary coefficients
+summary(reg.bestbic)
+
+```
+
+* When the BIC criteria is chosen, No. of variables equal to 2 are selected in the model for `lcavol` and `svi`, with an intercept.
+
+* From the Left plot of Rss: we find it always decrease with the increse of No. of variables, while for adjusted square, it starts to drop after No. of variables exceeds `which.max(reg.summary1$adjr2)`. 
+
+##### Correlation Coefficients 
+
+```{r}
+reg.bestbic$BestModel$coefficients
+```
+
+* Based on BIC criteria, we should choose a model with 2 variables: 
+`lcavol` and `svi`. 
+
+##### Plots 
+
+```{r}
+error2 = reg.bestbic$Subsets$BIC
+fit2 = data.frame(cbind(v, error2))
+
+ggplot(fit2, aes(x = c(0:8), 
+                 y = error2
+                        )) + 
+  geom_line(aes( col = '#E69F00')) +
+  geom_point(aes(col = '#999999')) +
+   labs(title="Best Subset Method with BIC selection", 
+      x="# of Variables", y = "BIC")+
+   theme_classic() +
+   theme(legend.position="none") +
+    geom_hline(yintercept= min(error2), 
+               linetype="dashed", color = "purple") +
+    geom_vline(xintercept= 2, 
+               linetype="dashed", color = "purple")
+
+
+### BIC: 
+BIC(lm(lpsa~lcavol+lweight, testst))
+
+### test error
+## Yhat: predicted value on the testdata 
+yh2 <- as.matrix(predict
+                (reg.bestbic$BestModel,newx = as.matrix(testst[,1:8]) ))
+
+### test error 
+te2 = sum(lm(lpsa~lcavol + lweight, testst)$residuals^2)/30
+te2
+
+## estimating Std Error
+sd2 = sum(sqrt(mean(((yh2[1:30] - testst[,9])^2))))/nrow(testst)
+sd2
+
+```
+
+* While for BIC, it starts to increase after No. of variables exceeds `which.min(reg.summary1$bic)`, so it is consistent with the conclusion that the chosen best model is with 2 variables.
+
+* Also the CV and BIC fitted best-subset models are the same, share the same model parameters, test error, and SD of test error.
+
+
+### (c) Lasso regression with $\lambda$ chosen by 5-fold cross-validation.
+
+```{r}
+# Duplicate part of Figure 3.7 (the lasso regularization results)  
+## use glmnet in package glmnet
+library(glmnet)
+# use 5-fold cross-validation to choose best lambda
+set.seed(18)
+
+cv.out = cv.glmnet(x = as.matrix(trainst[,1:8]),
+                   y= as.numeric(trainst[,9]), 
+                   nfolds = 5, 
+                   alpha = 1, # alpha = 1 => lasso
+                   standardize = F) ## has standardized 
+
+# the best lambda chosen by 5-fold cross-validation
+lambda.5fold = cv.out$lambda.1se 
+
+```
+
+###### select the suitable parameter $\lambda$
+
+```{r}
+# get the optimal value of lambda: 
+# apply Lasso with chosen lambda
+fitlasso = glmnet(x =  as.matrix(trainst[,1:8]),
+                  y=   as.numeric(trainst[,9]),
+                  alpha = 1, 
+                  lambda = lambda.5fold,
+                  standardize= F,
+                  thresh = 1e-12)
+```
+
+##### Fitted coefficients
+
+If we try to refit with this opimal value of lambda, and we get the coefficients est.
+
+```{r}
+## note that they are not the same as Table 3.3 on page 63 due to the chosen labmda and fitting algorithm
+# Intercept  
+fitlasso$a0 
+# beta
+fitlasso$beta
+```
+
+##### Graph of the Lasso Parameters 
+
+```{r}
+plot(cv.out,
+       xlab="Shrinkage Factors",
+       main = "The LASSO Model with 5-fold CV",
+       ylab="Mean CV Error", 0.01)
+abline(h=cv.out$cvup[which.min(cv.out$cvm)])
+
+```
+
+
+
+##### ModelEvaluation 
+
+```{r}
+# estimating mean prediction error
+test.lasso = predict(fitlasso,
+                     newx=as.matrix(testst[,1:8]))
+
+# mean (absolute) prediction error
+mean(abs(testdata[,9]-test.lasso))                
+
+# mean (squared) prediction error
+mean((testdata[,9]-test.lasso)^2)                
+
+# standard error of mean (squared) prediction error
+sd((testdata[,9]-test.lasso)^2)/sqrt(30)         
+```
+
+
+The model fit with 4 variables with 5-fold cv in LASSO. 
+This method select variables “lcavol”, “lweight”, "lbph" and “svi” into the model. 
+
+From this graph above, we found that the lowest MSE appears to be minimum when No. of log(shrinkage factor) falls, $\lambda$ = `r lambda.5fold` provides the best CV error using one-standard deviation rule. 
+
+
+
+### (d) Lasso regression with $\lambda$ chosen by BIC
+
+By default the `glmnet()` function performs ridge regression for an automatically selected range of $\lambda$ values.
+
+However, here we have chosen to implement the function over a grid of values ranging from  $\lambda$ = 1010  to  $\lambda =10^{-2}$  , essentially covering the full range of scenarios from the null model containing only the intercept, to the least squares fit.
+
+#### Method 1: using the `ic.glmnet` package; 
+
+```{r echo=TRUE, message=FALSE, eval=FALSE}
+set.seed(1)
+library(HDeconometrics)
+
+## == LASSO == ##
+# (1) Fit lasso model on training data
+lasso_bic = ic.glmnet(
+                   x = as.matrix(trainst[,1:8]),
+                   y = as.numeric(trainst[,9]), 
+                   crit = "bic")
+
+## Draw plot of coefficients
+plot(lasso_bic$glmnet,"lambda", ylim=c(-2,2))
+plot(lasso_bic)
+
+## BIC selected model coefficients
+c = lasso_bic$coefficients
+c
+
+## Tuning parameter
+lasso_bic$lambda
+
+
+# (2) Fit lasso model on test data
+## == Forecasting == ##
+pred.lasso = predict(lasso_bic, newdata = testst[,1:8])
+plot(testst[,9], type="l")
+lines(pred.lasso, col=2)
+error = sqrt(mean((testst[,9]-pred.lasso)^2))
+
+```
+
+#### Method 2: using the `glmnet` package with BIC self-calculation 
+
+```{r}
+set.seed(221)
+## == LASSO == ##
+# Fit lasso model on training data
+lassobic_fit <- glmnet( 
+              x = as.matrix(trainst[,1:8]),
+               y = as.numeric(trainst[,9]),  
+               lambda = seq(0, 1, length.out = 1000))
+
+bic <- (- lassobic_fit$nulldev + 
+          deviance(lassobic_fit) + 
+          log(lassobic_fit$nobs)* lassobic_fit$df)/lassobic_fit$nobs
+
+
+## Draw plot of coefficients
+plot(seq(0,1,length.out = 1000), bic, type="l", 
+     col = "blue",
+     main = "The LASSO Model with BIC",
+     lwd= 2.3, 
+     xlab = "Lambda", ylab = "BIC")
+
+abline(h = min(bic), 
+       lty = 2, 
+       family="Symbol", 
+       col = "purple")
+
+abline(v = seq(0,1,length.out = 1000)[min(which(bic==min(bic)))], 
+       lty =2, col = "purple")
+
+
+```
+
+##### choosing tuning paramter 
+
+```{r}
+### Best lambda chosen
+bestlam = seq(0,1,length.out = 1000)[min(which(bic == min(bic)))] 
+bestlam 
+
+### Coefficients Estimates
+bic_est = coef(glmnet(as.matrix(trainst[,1:8]), trainst[,9], 
+          lambda = bestlam))
+bic_est
+
+##### Now we can calculate the forecast: Test error
+test_error4 = sum((model.matrix(~., (testst[,1:8])) %*% 
+        coef(glmnet(as.matrix(trainst[,1:8]), trainst[,9], 
+            lambda = bestlam)) - testst[,9])^2)/30  
+test_error4
+
+# standard error of mean (squared) prediction error
+sd4 = sd((model.matrix(~., (testst[,1:8])) %*% 
+        coef(glmnet(as.matrix(trainst[,1:8]), trainst[,9], 
+            lambda = bestlam)) - testst[,9])^2)/sqrt(30)     
+sd4 
+```
+
+* The Second plot shows the BIC curve and the selected model, the lowest lambda value is specified after the 1000 iteration in the model, and it was specified as `bestlam`.
+
+* Then we fit the model to the testdata and calculated the test error.
+
+### (e) Principle component regression with q chosen by 5-fold cross-validation
+
+```{r}
+# REG_CHOICE: 1 (does principal component regression), 
+set.seed(8)
+
+#### Principal Components Regression
+pcr.fit = pcr(lpsa~.,  
+              data = trainst, 
+              scale = F, 
+              validation = "CV", 
+              ## Segments for 5-fold randomised cross-validation:
+              segments = 5)
+
+## Find the best number of components, 
+## regenerating part of Figure 3.7 on page 62
+summary(pcr.fit)
+validationplot(pcr.fit, 
+               cex = 1,
+               main = "Principal Components Regression", 
+               val.type="MSEP", 
+               xlab = "number of components", 
+               ylab = "cv error" )
+
+itemp = which.min(pcr.fit$validation$PRESS)     # 8
+itemp.mean = pcr.fit$validation$PRESS[itemp]/67 
+
+mean((pcr.fit$validation$pred[,,itemp]- trainst[,9])^2) 
+
+itemp.sd = sd((pcr.fit$validation$pred[,,itemp]-
+                 trainst[,9])^2)/sqrt(67)   
+
+abline(h= itemp.mean, lty=2, col="purple")
+k.pcr = min((1:pcr.fit$validation$ncomp)[pcr.fit$validation$PRESS/67 < itemp.mean + itemp.sd])  # the chosen 
+abline(v = k.pcr, lty=2, col="blue")  
+
+```
+
+
+##### Coefficients summary with intercept
+
+```{r}
+### Coefficients summary with intercept
+B <- coef(pcr.fit, ncomp = k.pcr, intercept = TRUE)
+B
+
+```
+
+
+##### fitted model with chosen number of components
+
+```{r}
+# estimating mean prediction error
+test.pcr = predict(pcr.fit, as.matrix(testst[,1:8]),
+                   ncomp = k.pcr)
+# mean (absolute) prediction error
+te5 = mean(abs(testst[,9]- test.pcr))    
+te5
+# mean (squared) prediction error
+mean((testst[,9]-test.pcr)^2)                 
+# standard error of mean (squared) prediction error
+se5 = sd((testst[,9]-test.pcr)^2)/sqrt(30)          
+se5
+```
+
+Comment: 5-fold cross-validation for principle component regression presents three factors provide the best CV error under the one-standard deviation rule. 
+The fitted coefficients in model PCR shown above has selected model with all 8 variables, test error = `r te5` , se(test.error) = `r se5` 
+
+
+

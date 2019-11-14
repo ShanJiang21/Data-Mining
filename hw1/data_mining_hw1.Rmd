@@ -1,0 +1,150 @@
+---
+title: "DataMining_hw1"
+author: "haokun yuan"
+date: "9/30/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaps)
+library(tidyverse)
+library(car)
+library(glmnet)
+library(caret)
+library(pls)
+```
+
+```{r}
+df = read.delim("./data/prostate.txt")
+df_train = df %>% 
+  filter(train == TRUE) %>% 
+  select(-X,-train)
+df_test = df %>% 
+  filter(train == FALSE)%>% 
+  select(-X,-train)
+ctrl = trainControl(method = "cv", number = 5)
+trRows <- createDataPartition(df_train$lpsa,
+                              p = .75,
+                              list = F)
+# cv train 
+x = model.matrix(lpsa~.,df_train)[trRows,-1]
+y = df_train$lpsa[trRows]
+# cv test
+x2 = model.matrix(lpsa~.,df_test)[-trRows,-1]
+y2 = df_test$lpsa[-trRows]
+#full train
+x3 = model.matrix(lpsa~.,df_train)[,-1]
+y3 = df_train$lpsa
+#test data
+x3 = model.matrix(lpsa~.,df_test)[,-1]
+y3 = df_test$lpsa
+```
+
+(a)
+```{r}
+predict.regsubsets = function(object,newdata,id,...){
+  form = as.formula(object$call[[2]])
+  mat = model.matrix(form,newdata)
+  coefi = coef(object, id = id)
+  xvars = names(coefi)
+  mat[,xvars]%*%coefi
+}
+
+k = 5
+set.seed(1)
+folds = sample(1:k,nrow(df_train),replace = TRUE)
+cv.errors = matrix(NA,k,8,dimnames = list(NULL, paste(1:8)))
+for(j in 1:k){
+  best.fit = regsubsets(lpsa~.,data = df_train[folds!=j,],nvmax = 8)
+  for(i in 1:8){
+    pred = predict(best.fit,df_train[folds == j,],id = i)
+    cv.errors[j,i]=mean((df_train$lpsa[folds == j]-pred)^2)
+  }
+}
+mean.cv.errors = apply(cv.errors,2,mean)
+mean.cv.errors
+par(mfrow = c(1,1))
+plot(mean.cv.errors,type='b')
+coef(best.fit,7)
+```
+(b)
+```{r}
+b = regsubsets(lpsa~.,df_train)
+sum_b = summary(b)
+sum_b$bic
+par(mfrow=c(2,2))
+plot(sum_b$bic ,xlab="Number of Variables ",ylab="BIC")
+coef(b,3)
+```
+(c)
+```{r}
+grid = exp(seq(-5,-1, length=100))
+lasso.mod = cv.glmnet(x,y,alpha = 1,nfolds = 5, lambda = grid)
+lasso.mod$lambda.min
+plot(lasso.mod)
+coef(lasso.mod)
+```
+(d)
+```{r}
+d_fit = glmnet(x3,y3,alpha = 1)
+res = y3-predict(d_fit,x3)
+sse = sum(res**2)
+k=8
+n=97
+BIC = n*log10(sse/n) + k*log10(n)
+
+for (i in seq(0.1,1.0,length = 100)){
+  d_fit = glmnet(x3,y3,alpha = 1,lambda = i)
+  res = y3-predict(d_fit,x3,id = i)
+  sse = sum(res**2,id = i)
+  k=8
+  n=97
+  BIC[i] = n*log10(sse/n) + k*log10(n)
+}
+
+lasso=ic.glmnet(x,y,crit = "bic",lambda = grid)
+coef(lasso)
+fitted(lasso)
+residuals(lasso)
+lasso$ic
+
+```
+(e)
+```{r}
+set.seed(2)
+pcr.fit <- train(x, y,
+method = "pcr",
+tuneLength = 7,
+trControl = ctrl,
+scale = TRUE)
+ggplot(pcr.fit, highlight = TRUE) + theme_bw()
+
+set.seed(2)
+pcr.mod <- pcr(lpsa~.,
+               data = df_train,
+               scale = TRUE,
+               validation = "CV",
+               segments = 5)
+summary(pcr.mod)
+plot(pcr.mod)
+validationplot(pcr.mod, val.type="MSEP", legendpos = "topright")
+coef(pcr.mod,ncomp = 8,intercept =TRUE)
+```
+
+```{r}
+set.seed(1)
+a.best = regsubsets(lpsa~.,df_train,nvmax = 8)
+test.mat = model.matrix(lpsa~.,df_test)
+val_errors = rep(NA,8)
+for(i in 1:8){
+  coefi = coef(a.best,id = i)
+  pred = test.mat[,names(coefi)]%*%coefi
+  val_errors[i] = mean((df_test$lpsa - pred)^2)
+}
+val_errors
+
+
+
+```
+

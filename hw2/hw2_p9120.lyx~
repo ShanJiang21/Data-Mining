@@ -1,0 +1,948 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize letterpaper
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\topmargin 2cm
+\bottommargin 2.5cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+P9120 Homework 2 
+\end_layout
+
+\begin_layout Author
+Shan Jiang
+\end_layout
+
+\begin_layout Section*
+Problem 1
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\color blue
+Ex.
+ 4.5
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\color blue
+Consider a two-class logistic regression problem with 
+\begin_inset Formula $x\in R$
+\end_inset
+
+.
+ Characterize the maximum-likelihood estimates of the slope and intercept
+ parameter if the sample 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ for the two classes are separated by a point 
+\begin_inset Formula $x_{o}\in R$
+\end_inset
+
+.
+ Generalize this result to (a) 
+\begin_inset Formula $x\in R_{p}$
+\end_inset
+
+ and (b) more than two classes.
+\end_layout
+
+\begin_layout Standard
+First we assume that 
+\begin_inset Formula $x_{0}=0$
+\end_inset
+
+ and y = 1 for 
+\begin_inset Formula $x_{i}>0$
+\end_inset
+
+ and y = 0 for 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ < 0.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p(x;\beta)=\frac{\exp(\beta_{x}+\beta_{0})}{1+\exp(\beta_{x}+\beta_{0})}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+1-p(x;\beta)=1-\frac{\exp(\beta_{x}+\beta_{0})}{1+\exp(\beta_{x}+\beta_{0})}=\frac{1}{1+exp(\beta_{x}+\beta_{0})}
+\]
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+Given the condition that 
+\begin_inset Formula $x_{0}=0$
+\end_inset
+
+ is the boundary, then 
+\begin_inset Formula $p(x_{0})=1-p(x_{0})$
+\end_inset
+
+, 
+\begin_inset Formula $\beta_{0}=0,$
+\end_inset
+
+ so the above function can be simplified as: 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p(x;\beta)=\frac{\exp(\beta_{x})}{1+\exp(\beta_{x})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+1-p(x;\beta)=1-\frac{1}{1+\exp(\beta_{x})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Therefore we derive the likelihood function as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+L(\beta;y,x)=\prod_{i=1}^{N}p(x_{i};\beta)^{y_{i}}[1-p(x_{i};\beta)]^{1-y_{i}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+=\prod_{i=1}^{N}[\frac{p(x_{i;}\beta)}{1-p(x_{i;}\beta)}]^{y_{i}}[1-p(x_{i};\beta)]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+=\prod_{i=1}^{N}[\exp(\beta x_{i})]^{y_{i}}[1-p(x_{i};\beta)]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then we take log of both sides:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+logL(\beta;y,x)=\mathop{\Sigma_{i=1}^{N}}y_{i}[\beta x_{i}]-log[1+exp\{\beta x_{i}\}]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After then we take the first-order derivatives w.r.t to 
+\begin_inset Formula $\beta,and$
+\end_inset
+
+ use the condition for y as an replacement.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{dlogL(\beta;y,x)}{d\beta}=\Sigma_{i=1}^{N}x_{i}(y_{i}-\frac{exp(\beta x_{i})}{1+exp(\beta x_{i})})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+=\Sigma_{X_{i}>0}^{N}x_{i}(1-\frac{exp(\beta x_{i})}{1+exp(\beta x_{i})})-\Sigma_{x_{i}<0}^{N}x_{i}(\frac{exp(\beta x_{i})}{1+exp(\beta x_{i})})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+=\Sigma_{X_{i}>0}^{N}x_{i}-\Sigma_{X_{i}>0}^{N}x_{i}(\frac{exp(\beta x_{i})}{1+exp(\beta x_{i})})-\Sigma_{x_{i}<0}^{N}x_{i}(\frac{exp(\beta x_{i})}{1+exp(\beta x_{i})}).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+set\frac{dlogL(\beta;y,x)}{d\beta}=0\Leftrightarrow\Sigma_{X_{i}>0}^{N}x_{i}=\Sigma_{x_{i}=1}^{N}x_{i}(\frac{exp(\beta x_{i})}{1+exp(\beta x_{i})})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Thus, we can infer that for any dataset 
+\begin_inset Formula $\Sigma_{x_{i}=1}^{N}x_{i}$
+\end_inset
+
+, only when 
+\begin_inset Formula $\beta\rightarrow\infty,$
+\end_inset
+
+the first order derivative can be set to 0 and holds.
+\end_layout
+
+\begin_layout Standard
+(b) Suppose that there are K classes, with 
+\begin_inset Formula $x_{k}$
+\end_inset
+
+ sperates between K-1 class and K class, and -
+\begin_inset Formula $\infty<x_{0}<$
+\end_inset
+
+
+\begin_inset Formula $x_{1}<x_{2}<x_{3}<\cdots<x_{k-1}<x_{k}=\infty$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Each probability is defined as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P_{1}(x;\beta)=\frac{exp(\beta_{1}x+\beta_{01})}{1+\Sigma_{j=1}^{K-1}exp(\beta_{j}x+\beta_{0j})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P_{2}(x;\beta)=\frac{exp(\beta_{2}x+\beta_{02})}{1+\Sigma_{j=1}^{K-1}exp(\beta_{j}x+\beta_{0j})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\vdots
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P_{k-1}(x;\beta)=\frac{1}{1+\Sigma_{j=1}^{K-1}exp(\beta_{j}x+\beta_{0j})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Given the assumption, for y is 
+\begin_inset Formula $y_{i}$
+\end_inset
+
+= 1 if 
+\begin_inset Formula $x_{j-1}<x_{i}<x_{j}$
+\end_inset
+
+ and 
+\begin_inset Formula $y_{i}$
+\end_inset
+
+ = 0 otherwise for observation i = 1, .
+ .
+ .
+ , N and class j = 1, .
+ .
+ .
+ , K.
+ we can take a new likelihood function:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+L(\beta;y,x)=\prod_{j=1}^{K}\prod_{i=1}^{N_{j}}[p_{j}(x_{i};\beta)^{y_{i}}]^{y_{i}},
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $N_{j}$
+\end_inset
+
+ is the number of obs.
+ in class j, then we take the log-likelihood function:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+logL(\beta;y,x)=\mathop{\Sigma_{j=1}^{K-1}\mathop{\Sigma_{i=1}^{N_{j}}}}log[\frac{exp(\beta_{j}x_{i}+\beta_{0j})}{1+\Sigma_{j=1}^{K-1}exp(\beta_{j}x+\beta_{0j})}]+\Sigma_{i=1}^{N_{k}}y_{i}log[\frac{1}{1+\Sigma_{j=1}^{k-1}exp(\beta_{j}x_{i}+\beta_{0j})}]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\mathop{=\Sigma_{j=1}^{K-1}\mathop{\Sigma_{i=1}^{N_{j}}}}y_{i}[\beta_{j}x_{i}+\beta_{0j}]-\Sigma_{j=1}^{K}\Sigma_{i=1}^{N_{j}}y_{i}log[1+\Sigma_{j=1}^{k-1}exp(\beta_{j}x_{i}+\beta_{0j})]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then we take the derivative wrt to 
+\begin_inset Formula $\beta=(\beta_{1},\beta_{2},\cdots,\beta_{k-1})$
+\end_inset
+
+, given that for 
+\begin_inset Formula $x_{j-1}<x<x_{j},$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $p(x;\beta_{j})=\frac{exp(\beta_{j}x+\beta_{0j})}{1+\Sigma_{j=1}^{k-1}exp(\beta_{j}x_{i}+\beta_{0j})}$
+\end_inset
+
+, where 
+\begin_inset Formula $\beta_{0j}=log[exp(\beta_{j}x_{j-1})-exp(\beta_{j}x_{j})]$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first-order derivative is then written as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{dlogL(\beta;y,x)}{d\beta_{j}}=\Sigma_{i=1}^{N_{j}}x_{i}+\Sigma_{i=1}^{N_{j}}\frac{exp(\beta_{j}x_{j-1})x_{j-1}-exp(\beta_{j}x_{j})x_{j}}{exp(\beta_{j}x_{j-1})-exp(\beta_{j}x_{j})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+-\Sigma_{i=1}^{N}[X_{i}+\frac{exp(\beta_{j}x_{j-1}-exp(\beta_{j}x_{j})x_{j}}{exp(\beta_{j}x_{j-1})-exp(\beta_{j}x_{j})}](\frac{exp(\beta_{j}x_{i}-\beta_{0j})}{1+\Sigma_{j=1}^{K-1}exp(\beta_{j}x_{i}+\beta_{0j})})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Set the 
+\begin_inset Formula $\frac{dlogL(\beta;y,x)}{d\beta_{j}}=0$
+\end_inset
+
+, Since the question listed two scenarios:
+\end_layout
+
+\begin_layout Standard
+(a) Now, suppose that there are two classes in which x 
+\begin_inset Formula $\in R_{p}$
+\end_inset
+
+ .
+ Suppose that 
+\begin_inset Formula $\mathbf{X_{1}}$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathbf{\mathbf{X}_{\mathbf{2}}}$
+\end_inset
+
+ are two vectors, we have that 
+\series bold
+β
+\series default
+(
+\begin_inset Formula $\mathbf{X_{1}}$
+\end_inset
+
+ -
+\begin_inset Formula $\mathbf{\mathbf{X}_{\mathbf{2}}}$
+\end_inset
+
+) = 0.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p(\mathbf{x};\mathcal{β})=\frac{exp(\mathbf{β'}x+\beta_{0})}{1+exp(\mathbf{β}'x+\beta_{0})}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As we know that the 
+\begin_inset Formula $X_{0}$
+\end_inset
+
+ is the seperating parameter, we can simplify the above equation as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+1-p(\mathbf{x};\mathcal{β})=\frac{1}{1+exp((x-x_{0}))}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is similar to the univariate case in that once taking derivatives of
+ the log-likelihood function wrt to 
+\begin_inset Formula $\beta=(\beta_{1},\beta_{2},\cdots,\beta_{k-1})$
+\end_inset
+
+, and setting them equal to zero.
+ 
+\end_layout
+
+\begin_layout Standard
+In conclusion, the Generalized form is that when 
+\begin_inset Formula $||\beta||$
+\end_inset
+
+→ ∞, the maximum likelihood estimator is attained, note that 
+\begin_inset Formula $\beta$
+\end_inset
+
+ is a vector.
+\end_layout
+
+\begin_layout Section*
+Problem 2
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\color blue
+Ex.
+ 5.1 Show that the truncated power basis functions in (5.3) represent a basis
+ for a cubic spline with the two knots as indicated.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+h_{1}(X)=1,h_{3}(X)=X^{2},h_{5}(X)=(X-\xi_{1})_{+}^{3}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+h_{2}(X)=X,h_{4}(X)=X^{3},h_{5}(X)=(X-\xi_{2})_{+}^{3}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The proof requires a fulfillment of Condition 
+\begin_inset Formula $C_{2}$
+\end_inset
+
+ leads to 
+\begin_inset Formula $C_{1}$
+\end_inset
+
+,
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Formula $C_{1}$
+\end_inset
+
+ requires truncated power basis functions; While for 
+\begin_inset Formula $C_{2}$
+\end_inset
+
+, it required a collection of cubic functions.
+\end_layout
+
+\begin_layout Standard
+To prove from cubic function 
+\begin_inset Formula $C_{2}\rightarrow C_{1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The cubic polynomial can be expressed by:
+\begin_inset Formula 
+\[
+f(x)=\Sigma_{m=1}^{6}\beta_{m}h_{m}(x)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then we need to show the continuity of the f(x) at knots 
+\begin_inset Formula $\xi_{1}$
+\end_inset
+
+and 
+\begin_inset Formula $\xi_{2}$
+\end_inset
+
+, and the first and second order derivatives' continuity.
+\end_layout
+
+\begin_layout Subsubsection*
+1.
+ The continuity of f(x): 
+\end_layout
+
+\begin_layout Standard
+By proving the left limit = right limit at 
+\begin_inset Formula $\xi_{1},$
+\end_inset
+
+the continuity can be achieved:
+\end_layout
+
+\begin_layout Subsubsection*
+The Left-limit:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f(\xi_{1}-k)=\beta_{1}+\beta_{2}(\xi_{1}-k)+\beta_{3}(\xi_{1}-k)^{2}+\beta_{4}(\xi_{1}-k)^{3}+\beta_{5}(\xi_{1}-k-\xi_{1})_{+}^{3}+\beta_{6}(\xi_{1}-k-\xi_{2})_{+}^{3},k>0
+\]
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+=\beta_{1}+\beta_{2}(\xi_{1}-k)+\beta_{3}(\xi_{1}-k)^{2}+\beta_{4}(\xi_{1}-k)^{3}+0+0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So, 
+\begin_inset Formula 
+\[
+lim_{k\rightarrow0^{-}}f(\xi_{1}-k)=\beta_{1}+\beta_{2}\xi_{1}+\beta_{3}(\xi_{1})^{2}+\beta_{4}(\xi_{1})^{3}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+The right limit:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f(\xi_{1}+k)=\beta_{1}+\beta_{2}(\xi_{1}+k)+\beta_{3}(\xi_{1}+k)^{2}+\beta_{4}(\xi_{1}+k)^{3}+\beta_{5}(\xi_{1}+k-\xi_{1})_{+}^{3}+\beta_{6}(\xi_{1}+k-\xi_{2})_{+}^{3},k>0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+lim_{k\rightarrow0^{+}}f(\xi_{1}+k)=\beta_{1}+\beta_{2}\xi_{1}+\beta_{3}(\xi_{1})^{2}+\beta_{4}(\xi_{1})^{3}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family sans
+\shape slanted
+\emph on
+Thus, the left limit is equal to the right limit at 
+\begin_inset Formula $\xi_{1},$
+\end_inset
+
+the continuity can be achieved.
+\end_layout
+
+\begin_layout Subsubsection*
+2.
+ Continuity of 
+\begin_inset Formula $f'(x)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Then we take the first order derivatives at 
+\begin_inset Formula $x=\xi_{1}$
+\end_inset
+
+,
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f'(\xi_{1})=lim_{k\rightarrow0}\frac{f(\xi_{1})-f(\xi_{1}-k)}{k}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Based on the definition of 
+\begin_inset Formula $f(x),and$
+\end_inset
+
+ 
+\begin_inset Formula $f(\xi_{1})=\beta_{1}+\beta_{2}\xi_{1}+\beta_{3}(\xi_{1})^{2}+\beta_{4}(\xi_{1})^{3}$
+\end_inset
+
+ then we have:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f(\xi_{1})-f(\xi_{1}-k)=\beta_{2}\xi_{1}+2\beta_{3}(\xi_{1})k+3\beta_{4}(\xi_{1})^{2}k+O(k)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then the lfet-side derivative w.r.t.
+ k is written as: 
+\begin_inset Formula 
+\[
+f'_{-}(\xi_{1})=\beta_{2}\xi_{1}+2\beta_{3}(\xi_{1})+3\beta_{4}(\xi_{1})^{2}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The right-side derivative is written as: 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f'_{+}(\xi_{1})=lim_{k\rightarrow0}\frac{f(\xi_{1}+k)-f(\xi_{1})}{k}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For the same reason like above, 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f(\xi_{1}+k)-f(\xi_{1})=\beta_{2}\xi_{1}+2\beta_{3}(\xi_{1})k+3\beta_{4}(\xi_{1})^{2}k
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
++\beta_{5}(\xi_{1}+k-\xi_{1})_{+}^{3}+\beta_{6}(\xi_{1}+k-\xi_{2})_{+}^{3}+O(k)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f'_{+}(\xi_{1})=\beta_{2}+2\beta_{3}\xi_{1}+3\beta_{4}\xi_{1}^{2}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+3.
+ Continuity of 
+\begin_inset Formula $f''(x)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then we take the second order derivatives at 
+\begin_inset Formula $x=\xi_{1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For the same reason like above part 2, that the left-side limit is equal
+ to right-side limit, 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f''(\xi_{1})=f''_{-}(\xi_{1})=f''_{+}(\xi_{1})=6\beta_{4}\xi_{1}^{2}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+\noun on
+Conclusion: At 
+\begin_inset Formula $\xi_{1},$
+\end_inset
+
+ function, first and 
+\emph default
+\noun default
+second order derivatives are all continuous at this knot.
+ Similarly, we can prove it on 
+\emph on
+\noun on
+
+\begin_inset Formula $\xi_{2},$
+\end_inset
+
+ thus
+\emph default
+\noun default
+ we can say the cubic spline function with two knots is equivalent to that
+ of the basis function as it fufills the continuity requirement for function,
+ first-order derivative and second-order derivative.
+\end_layout
+
+\begin_layout Section*
+Problem 3
+\end_layout
+
+\end_body
+\end_document

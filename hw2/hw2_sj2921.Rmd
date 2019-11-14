@@ -1,0 +1,546 @@
+---
+title: "Data Mining Homework 2"
+author: "Shan Jiang"
+date: "10/07/2019"
+output: 
+   pdf_document: 
+     fig_caption: yes
+     fig_height: 5
+     highlight: pygments
+     toc: yes
+     toc_depth: 6
+---
+
+
+## Problem 3
+
+#### Load packages 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tidyverse) 
+library(broom)
+library(lattice)
+library(caret)
+library(glmnet)
+library(MASS)
+library(pls)
+library(STAT)
+library(splines)
+require(ggplot2)
+```
+
+
+#### (a) Generate Vector x consisting of 50 points drawn at random from Uniform [0, 1].
+
+```{r}
+## Basic prep
+set.seed(1018)
+a = as.vector(runif(50, 0,1))
+hist(a,probability=TRUE,col=gray(.9),main="uniform on [0,1]") 
+
+## For each dataset X is identical 
+x.init = a
+```
+
+#### (b) Generate 100 training datasets 
+
+```{r}
+n.sims <- 100
+n.obs <- 50
+
+# Make an empty list to save output in
+xl = list() 
+el = list()
+yl = list()
+df = list()
+
+
+## use for loop to iterate: 100 datasets
+for (i in 1:n.sims){
+  xl[[i]] = x.init
+  el[[i]] = as.vector(rnorm(50, mean = 0, sd = 1)) ## std.normal 
+  yl[[i]] = (sin(2 * pi * (xl[[i]])^3 ))^3 + el[[i]]
+  df[[i]] = data.frame(x = xl[[i]], y = yl[[i]])
+}
+
+## look at the data
+#head(df[[100]])
+#head(df[[50]])
+```
+
+
+#### (i) Data modelling 
+
+##### (i). OLS estimation
+
+```{r}
+set.seed(10008)
+
+a1 = list()
+b1 = list()
+
+for (i in 1:n.sims){
+  a1[[i]] = lm(y ~ x, df[[i]]) ## construct the model
+  b1[[i]] = as.matrix(a1[[i]]$fitted.values) ## Fitted value list 
+  
+}
+
+## validation
+fittest1 = lm(y~x, 
+       data = df[[100]])
+tail(fittest1$fitted.values)
+tail(b1[[100]])
+```
+
+The OLS linear model fitted values are stored in `b1[[i]]`.
+
+##### (ii) OLS with cubic polynomial model
+
+```{r}
+a2 = list()
+b2 = list()
+
+for (i in 1:n.sims){
+  a2[[i]] = lm(y ~ poly(x, 3), df[[i]]) ## construct the model:cubic 
+  b2[[i]] = as.matrix(a2[[i]]$fitted.values) ## Fitted value list 
+}
+
+
+## validation
+fittest2 = lm(y~poly(x, 3),
+       data = df[[100]])
+tail(fittest2$fitted.values)
+tail(b2[[100]])
+
+```
+
+$\beta_0 +\beta_1X+\beta_2X^2+\beta_3X^3$ cubic polynomial model, fitted values are stored in `b2[[i]]`.
+
+##### (iii) Cubic Spline(B- Spline) with 2 knots 
+
+```{r}
+require(splines)
+a3 = list()
+b3 = list()
+
+for (i in 1:n.sims){
+  a3[[i]] = lm(y ~ bs(x, 
+                     knots = c(0.33,0.66)), df[[i]]) ## construct the model:cubic spline  
+  b3[[i]] = as.matrix(a3[[i]]$fitted.values) ## Fitted value list 
+}
+
+### Validate Model Coefficients
+fittest3 <-lm(y ~ bs(x, 
+                     knots = c(0.33,0.66)),df[[100]])
+
+#tail(fittest3$fitted.values)
+#tail(b3[[100]])
+
+```
+
+fitted values are stored in `b3[[i]]`.
+
+##### (iv) Natural Cubic Spline with 5 Knots 
+
+```{r}
+set.seed(10008)
+a4 = list()
+b4 = list()
+
+for (i in 1:n.sims){
+  
+  a4[[i]] = lm(y ~ ns(x,
+                     knots = c(0.1, .3, .5, .7, .9)), df[[i]]) 
+  
+  b4[[i]] = as.matrix(a4[[i]]$fitted.values) ## Fitted value list 
+}
+
+### Validate Model Coefficients
+fittest4 <- lm(y ~ ns(x, 
+                     knots = c(0.1, .3, .5, .7, .9)),df[[100]])
+
+tail(fittest4$fitted.values)
+tail(b4[[100]])
+
+# Plotting the data, the fit, and the 95% CI:
+#plot(x, y, ylim = c(-1, +1))
+#lines(df[[1]], b4[[1]], col = "darkred", lty = 2)
+```
+
+Fitted values are stored in `b4[[i]]`.
+
+
+##### (v) Smoothing Spline with tuning parameter
+
+The idea here is to transform the variables and add a linear combination of the variables using the Basis power function to the regression function f(x).
+
+```{r fig.height=4.2, fig.width=5}
+a5 = list()
+b5 = list()
+
+for (i in 1:n.sims){
+   ## GCV choose tuning parameter
+  a5[[i]] = smooth.spline(xl[[i]], yl[[i]],   
+                          cv = FALSE) ## Indicating GCV method 
+   ## Fitted value list 
+  b5[[i]] = as.matrix(a5[[i]]$y) 
+}
+
+### Validate Model Coefficients
+fittest5 <- smooth.spline(xl[[1]], yl[[1]],  
+                          cv = FALSE)
+tail(fittest5$y)
+tail(b5[[1]])
+
+### Plotting comparison
+#plot(xl[[1]], yl[[1]],  col="grey",xlab="Xdf1",ylab="Ydf1")
+#abline(v=c(0.1, .3, .5, .7, .9),lty= 2,col="darkgreen")
+#lines(fittest5, col="red",lwd=2)
+```
+
+Fitted values are stored in `b5[[i]]`.
+
+#### (c) Transform fitted value as dataframe
+
+```{r}
+## Xij ith-variable, jth training set
+xdf = as.data.frame(x.init) 
+```
+
+
+```{r}
+### Extract fitted value and combine 
+data1list = list()
+data2list = list()
+data3list = list()
+data4list = list()
+data5list = list()
+
+
+for (i in 1:n.sims){
+  data1list[[i]] = b1[i] %>% 
+   map_df(as_tibble) 
+}
+
+fit_data1 = do.call(cbind, data1list)
+
+
+for (i in 1:n.sims){
+  data2list[[i]] = b2[i] %>% 
+            map_df(as_tibble)
+}
+fit_data2 = do.call(cbind, data2list)
+
+for (i in 1:n.sims){
+  data3list[[i]] = b3[i] %>% 
+      map_df(as_tibble) 
+
+}
+fit_data3 = do.call(cbind, data3list)
+
+for (i in 1:n.sims){
+  data4list[[i]]  = b4[i] %>% 
+  map_df(as_tibble) 
+  
+}
+
+fit_data4 = do.call(cbind, data4list)
+
+for (i in 1:n.sims){
+  data5list[[i]] = b5[i] %>% 
+      map_df(as_tibble) 
+
+}
+fit_data5 = do.call(cbind, data5list)
+
+```
+
+```{r}
+### Rename variable as Set and obs.
+names(fit_data1) <- paste0("set",".", 1:100)
+names(fit_data2) <- paste0("set",".", 1:100)
+names(fit_data3) <- paste0("set",".", 1:100)
+names(fit_data4) <- paste0("set",".", 1:100)
+names(fit_data5) <- paste0("set",".", 1:100)
+
+#head(fit_data5)
+```
+
+Thus we have simulated $X_{ij}$ stored in dataframe `xdf`, while`fit_data1`
+`fit_data2`,...,`fit_data5` are storing values of $\hat Y_{ij}$ respectively from 5 models.
+
+
+#### (d) Pointwise variance of Fitted values 
+
+```{r}
+## Pointwise variance across 100 datasets
+
+pv1 = apply(fit_data1,1,var)
+pv2 = apply(fit_data2,1,var)
+pv3 = apply(fit_data3,1,var)
+pv4 = apply(fit_data4,1,var)
+pv5 = apply(fit_data5,1,var)
+plotdf = as.data.frame(cbind(xdf, pv1, pv2, pv3, pv4, pv5))
+#qplot(plotdf$x.init, plotdf$pv1, geom='smooth', span =0.1)
+#qplot(plotdf$x.init, plotdf$pv2, geom='smooth', span =0.1)
+
+```
+
+
+##### Plotting
+
+```{r}
+colnames(plotdf) <- c("x", paste0("pv",".", 1:5))
+plotdf = as.data.frame(plotdf)
+
+plotdf = plotdf %>% 
+  gather("model", "point.variance", pv.1:pv.5)
+
+ggplot(plotdf, aes(x = x, y = point.variance, col = model)) +
+  geom_smooth(se=FALSE, method="loess", span=0.2, size=0.44) +
+  geom_point(size = 0.33, alpha = 0.6) + 
+  ggtitle("pointwise variance") +
+    theme(axis.text.y = element_text(colour = 'black', size = 10), 
+          axis.title.y = element_text(size = 12, 
+          hjust = 0.5, vjust = 0.2)) + 
+    theme(strip.text.y = element_text(size = 10, hjust = 0.5,
+          vjust = 0.5, face = 'bold')) + 
+   labs(caption = "X consisting of 50 points drawn at random from U[0,1]", title ="Pointwise variance curves for five models") + 
+    scale_color_manual(labels = c("OLS model", 
+                                  "OLS with cubic polynomial model", 
+                                  "Cubic spline (or B-spline) with 2 knots",
+                                  "Natural Cubic Spline-5 knots",
+                                  "Smoothing spline"), 
+                       values = c("red", 
+                                  "green", "Yellow", "orange","navy"))
+  
+  
+```
+
+*Conclusion*: 
+
+* The `global linear` model remains best in the variance across the range, including boundaries.
+* `Cubic Polynomial`, `Natural Cubic` and `Cubic spline`both require a price paid in bias near the boundaries, see from the orange line in the figure. 
+
+
+## Problem 4
+
+**South Africa data**:
+
+#### Data Description- Import data and Cleaning
+
+```{r echo=FALSE}
+df <- read.delim("./SAheart.data", sep = ",")  
+
+df =  df %>% 
+  dplyr::select(-row.names) %>% 
+  mutate(famhist = ifelse(famhist == "Present", 1, 0)) 
+## Convert the factor variable as binary 0-1 variable, 0 indicates absence
+
+str(df)
+
+## Overview of the data covariates in model
+p = dim(df)
+# the last column is response 
+p
+```
+
+There are 10 variables in the data and 462 observations in total.
+
+*outcome* (column 1): `chd` (response, coronary heart disease)
+
+*Predictors* (columns 2--10)
+
+* tobacco (cumulative tobacco (kg))
+* ldl
+* adiposity
+* famhist
+* typea (type-A behavior)
+* obesity
+* alcoho
+* age
+* sbp(systolic blood pressure)
+
+
+### Data split and normalization 
+
+As in the regression tutorial, we’ll split our data into a training (first 300 observations) and testing (300-462 obs.) data sets, so we can assess how well our model performs on an out-of-sample data set.
+
+Then we applied a normalization of predictor variables in the dataset. 
+
+```{r}
+## sampling segments 
+## Set up the train and test data 
+traindata = df[1:300,] 
+testdata = df[301:462,] 
+
+# standardization of predictors
+trainst <- traindata
+testst <- testdata
+
+for(i in 1:9) {
+  trainst[,i] <- trainst[,i] - mean(df[,i]);
+  trainst[,i] <- trainst[,i]/sd(df[,i]);
+}
+
+
+for(i in 1:9) {
+  testst[,i] <- testst[,i] - mean(df[,i]);
+  testst[,i] <- testst[,i]/sd(df[,i]);
+}
+
+```
+
+### Data Analysis 
+
+For the Analysis below, all the data have been standardized already.
+
+#### (1) logistic regression Model fit 
+
+Results from a logistic regression fit to the South African heart disease data.
+
+##### (a) Model estimates and fit on train dataset
+
+```{r}
+
+model1 <- glm(chd ~ ., 
+              family = "binomial", 
+              data = trainst)
+
+tidy(model1)
+
+```
+
+##### (b) Model prediction 
+
+```{r}
+# predictions
+glm.probs <- round(predict(model1, testst, 
+                     type="response"))
+
+# confusion matrix
+table(testst$chd, ifelse(glm.probs > 0.5, 1, 0))
+
+```
+
+##### (c). Test Error and SE
+
+```{r}
+# error rate ## 0.28
+testst %>% 
+  summarise(logit.error = mean(ifelse(glm.probs > 0.5, 1, 0) != chd), 
+            logit.sd = sd(ifelse(glm.probs > 0.5, 1, 0) != chd))
+
+```
+
+
+
+#### (2) LDA 
+
+LDA computes “discriminant scores” for each observation to classify what response variable class it is in (i.e. diseased or non-diseased). 
+
+##### (a). Model on trained data 
+
+```{r}
+lda.m1 <- lda(chd ~ ., 
+               data = trainst)
+plot(lda.m1)
+```
+
+1. The LDA output indicates that our prior probabilities are $\pi_1 = 0.6333333, \pi_2 = 0.3666667$; in other words, 63.33% of the training observations are customers who did not have the heart disease and 36.67% represent those who are diseased. 
+
+2. It also provides the group means; these are the average of each predictor within each class, and are used by LDA as estimates of $\mu_k$. 
+
+3. The coefficients suggest that subjects having a higher risk of getting the disease on average, are more likely to be smokers compared with non-diseased (-21% of non-diseased are smokers whereas 39.15% of diseased are). 
+
+##### (b). Predictions on Test data
+
+```{r}
+## Fit on testst
+test.predicted.lda <- predict(lda.m1, testst,
+                              type = "response")
+
+# number of high-risk patients with 50% probability of being diseased
+sum(test.predicted.lda$posterior[, 2] > .5)
+
+## 2-2 Table classification: matrix
+lda.cm <- table(testst$chd, test.predicted.lda$class)
+list(LDA_model = lda.cm %>% 
+                   prop.table() %>% 
+                   round(3))
+```
+
+The default setting is to use a 50% threshold for the posterior probabilities.
+
+##### (c). Test Error and SE
+
+```{r}
+testst %>% 
+  mutate(lda.pred = test.predicted.lda$class) %>%  
+  summarise(lda.error = mean(chd != lda.pred),
+            lda.se = sd(testst$chd != lda.pred))  
+```
+
+
+
+#### (3) Quadratic discriminant analysis (QDA)
+
+Quadratic discriminant analysis (QDA) provides an alternative approach. Like LDA, the QDA classifier assumes that the observations from each class of Y are drawn from a Gaussian distribution. However, unlike LDA, QDA assumes that each class has its own covariance matrix. 
+
+##### (a). Model estimates 
+
+```{r}
+qda.m1 <- qda(chd ~ ., data = trainst)
+```
+
+##### (b). Make Predictions
+
+```{r}
+test.predicted.qda <- predict(qda.m1, newdata = testst)
+
+## 2-2 Table classification
+qda.cm <- table(testst$chd, test.predicted.qda$class)
+list(QDA_model = qda.cm %>% prop.table() %>% round(3))
+
+```
+
+##### (c). Test Error and SE
+
+```{r}
+testst %>% 
+  mutate(qda.pred = test.predicted.qda$class) %>%  
+  summarise(qda.error = mean(chd != qda.pred),
+            qda.se = sd(testst$chd != qda.pred)) 
+  
+```
+
+
+
+##### Summary 
+
+```{r}
+require(knitr)
+m <- tibble( r0 = c( "Test Error", "SD"),
+             r1 =      c(  0.2530864,  0.4361282),
+             r2 =      c(  0.2530864,  0.4361282),
+             r3 =     c(  0.2592593  ,   0.439587)  )
+colnames(m) = c( "Model","Logistic", "LDA",  "QDA")
+ 
+
+
+kable(m, digits = 5, align = "c",
+              caption = "Summary test error and sd")
+
+
+```
+
+
+
+**Comment**: 
+
+* All three models give similar classification results.
+* The test error and standard deviation are identical for logistic regression and LDA, which holds well as these two models are in this case are similar. 
+* While the QDA only differs a little bit as it's more complicated and has larger test error and standard deviation.
+
+
+
